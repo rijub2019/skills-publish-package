@@ -1,0 +1,46 @@
+#
+name: Demo Push
+
+# This workflow runs when any of the following occur:
+# - A push is made to a branch called `main` or `seed`
+# - A tag starting with "v" is created
+# - A pull request is created or updated
+on:
+  push:
+    branches:
+      - main
+      - seed
+    tags:
+      - v*
+  pull_request:
+  # This creates an environment variable called `IMAGE_NAME ` with the value `ghtoken_product_demo`.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+#
+jobs:
+  # This pushes the image to GitHub Packages.
+  push:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      #
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: sample-packages/docker/
+          file: sample-packages/docker/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_NAME }}
+          labels: ${GITHUB_RUN_ID}
